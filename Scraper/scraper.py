@@ -19,7 +19,10 @@ while 1:
     with open(file_name, 'w') as result_file:
         csv_file = csv.writer(result_file, lineterminator='\n')
         if created:
-            csv_file.writerow(json_result[0].keys())
+            try:
+                csv_file.writerow(json_result[0].keys())
+            except IndexError:
+                continue
         for item in json_result:
             csv_file.writerow(item.values())
 
