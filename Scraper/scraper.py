@@ -3,7 +3,6 @@ import time
 import json
 import csv
 import datetime
-import sys
 from pathlib import Path
 
 api_key = '123db477-b253-4b8f-a9a1-806bcff0aabe'
@@ -17,18 +16,23 @@ while 1:
 
     json_result = json.load(result)['result']
     created = not Path(file_name).exists()
-    print(datetime.datetime.today().strftime('[%Y-%m-%d %H:%M:%S] Writing...'))
-    sys.stdout.flush()
+    print(datetime.datetime.today().strftime('[%Y-%m-%d %H:%M:%S] Writing... '), end='')
 
-    with open(file_name, 'a') as result_file:
-        csv_file = csv.writer(result_file, lineterminator='\n')
-        if created:
-            try:
-                csv_file.writerow(json_result[0].keys())
-            except IndexError:
-                continue
+    try:
+        with open(file_name, 'a') as result_file:
+            csv_file = csv.writer(result_file, lineterminator='\n')
+            if created:
+                try:
+                    csv_file.writerow(json_result[0].keys())
+                except IndexError:
+                    print('Empty response!', flush=True)
+                    continue
 
-        for item in json_result:
-            csv_file.writerow(item.values())
+            for item in json_result:
+                csv_file.writerow(item.values())
+        print('OK.', flush=True)
+    except IOError:
+        print('IO error!', flush=True)
+        continue
 
     time.sleep(interval)
