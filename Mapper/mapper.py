@@ -1,5 +1,6 @@
 import pandas as pd
 import math
+import datetime
 from mpl_toolkits.basemap import Basemap
 from matplotlib import colors
 from matplotlib import colorbar
@@ -21,7 +22,7 @@ class PlotMap:
     fig = None
     color_colname = None
 
-    def __init__(self, data, color_colname = None):
+    def __init__(self, data, color_colname=None):
         self.fig = plt.figure(figsize=(8, 8))
         self.fig.add_axes([0.05, 0.05, 0.8, 0.9])
         self.m = Basemap(projection='mill', resolution='c', epsg=2180,
@@ -37,8 +38,10 @@ class PlotMap:
         self.max_c = max(self.data.loc[:, color_colname])
         self.color_colname = color_colname
 
-    def plot(self, indices, color_colname=None, layer=0, draw=True):
-        if len(indices) != 0:
+    def plot(self, indices=None, color_colname=None, layer=0, draw=True):
+        if indices is None:
+            indices = slice(0, len(self.data))
+        if indices.__class__ == slice or len(indices) != 0:
             if self.data is None:
                 raise TypeError('Data is none.')
             lon, lat = self.m(self.data.loc[indices, self.lon_col].values, self.data.loc[indices, self.lat_col].values)
@@ -86,17 +89,17 @@ class PlotMap:
 
 
 def selector(data, i):
-    return list(range(i*100, (i+1)*100))
+    return data[data['TimeIndex'] == i]
 
 
 def titler(data, indices, i):
-    return data.loc[indices[0], 'Time']
+    return data.loc[indices[0], 'Time'].time()
 
 
 def val_to_col(column, minimum, maximum):  # 0 to 120 deg hue = red to green color
     return [(*hsv_to_rgb(0, 1, 1), 1) if x < minimum
-           else (*hsv_to_rgb(0.33, 1, 1), 1) if x > maximum
-           else (*hsv_to_rgb(0.33 * (x - minimum)/(maximum - minimum), 1, 1), 1) for x in column]
+            else (*hsv_to_rgb(0.33, 1, 1), 1) if x > maximum
+    else (*hsv_to_rgb(0.33 * (x - minimum) / (maximum - minimum), 1, 1), 1) for x in column]
 
 
 def partial_colormap(cmap, min_c, max_c, n=1000):
@@ -104,4 +107,30 @@ def partial_colormap(cmap, min_c, max_c, n=1000):
         'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=min_c, b=max_c),
         cmap(np.linspace(min_c, max_c, n)))
     return new_cmap
+
+
+data = pd.read_csv(r"..\processed_data.csv",
+                       dtype={'FirstLine': int, 'Lines': str,
+                              'Lon': float, 'Lat': float, 'Time': datetime.datetime, 'LowFloor': bool,
+                              'Brigade': str, 'TimeDiff': datetime.datetime, 'PrevLon': float,
+                              'PrevLat': float, 'Velocity': float, 'Day': int},
+                       parse_dates=['Time', 'TimeDiff'])
+data = data[data['Day'] == 24]
+data['Velocity'] *= 3.6
+data = data[data['Velocity'] < 85]
+data.index = np.arange(0, len(data))
+data['Time'] = [t - datetime.timedelta(seconds=t.second%30, microseconds=t.microsecond) for t in data['Time']]
+data['TimeIndex'] = [(x.value - data.loc[0, 'Time'].value)/30000000000 for x in data['Time']]
+
+def plot_colored(data, col):
+    pm = PlotMap(data, col)
+    fig = plt.gcf()
+    anim = pm.animate(selector, titler)
+    pm.show()
+    mywriter = animation.FFMpegWriter(fps=1)
+    anim.save('myanimation.mp4', writer=mywriter)
+
+
+plot_colored(data, 'Velocity')
+#plot_colored(data, 'LowFloor')
 
