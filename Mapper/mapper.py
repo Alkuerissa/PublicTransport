@@ -7,9 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from colorsys import hsv_to_rgb
 import numpy as np
-df = pd.read_csv('../tramwaje.csv')
-
-df['v'] = np.random.choice(range(0, 80), df.shape[0])
 
 
 class PlotMap:
