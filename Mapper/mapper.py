@@ -23,21 +23,21 @@ class PlotMap:
     fig = None
     color_colname = None
 
-    def __init__(self, service, data, color_colname = None):
+    def __init__(self, data, color_colname = None):
         self.fig = plt.figure(figsize=(8, 8))
         self.fig.add_axes([0.05, 0.05, 0.8, 0.9])
         self.m = Basemap(projection='mill', resolution='c', epsg=2180,
                          llcrnrlon=20.84, llcrnrlat=52.09, urcrnrlon=21.28, urcrnrlat=52.37)
-        self.m.arcgisimage(service=service, xpixels=1920, verbose=False, zorder=0)
+        self.m.arcgisimage(service='World_Street_Map', xpixels=1920, verbose=False, zorder=0)
         self.plot([])
         self.data = data
         if color_colname is not None:
-            self.color_colname = color_colname
             self.set_minmax_color(color_colname)
 
     def set_minmax_color(self, color_colname):
         self.min_c = min(self.data.loc[:, color_colname])
         self.max_c = max(self.data.loc[:, color_colname])
+        self.color_colname = color_colname
 
     def plot(self, indices, color_colname=None, layer=0, draw=True):
         if len(indices) != 0:
@@ -108,6 +108,6 @@ def partial_colormap(cmap, min_c, max_c, n=1000):
     return new_cmap
 
 
-pm = PlotMap('World_Street_Map', df, color_colname='v')
+pm = PlotMap(df, color_colname='v')
 anim = pm.animate(selector, titler)
 pm.show()
