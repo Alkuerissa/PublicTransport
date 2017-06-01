@@ -94,7 +94,6 @@ def titler(data, indices, i):
 
 
 def val_to_col(column, minimum, maximum):  # 0 to 120 deg hue = red to green color
-    print('test: {}'.format(np.sum(pd.isnull(column))))
     return [(*hsv_to_rgb(0, 1, 1), 1) if x < minimum
            else (*hsv_to_rgb(0.33, 1, 1), 1) if x > maximum
            else (*hsv_to_rgb(0.33 * (x - minimum)/(maximum - minimum), 1, 1), 1) for x in column]
