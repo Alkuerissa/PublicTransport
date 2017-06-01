@@ -107,7 +107,3 @@ def partial_colormap(cmap, min_c, max_c, n=1000):
         cmap(np.linspace(min_c, max_c, n)))
     return new_cmap
 
-
-pm = PlotMap(df, color_colname='v')
-anim = pm.animate(selector, titler)
-pm.show()
