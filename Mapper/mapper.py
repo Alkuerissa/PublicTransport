@@ -66,7 +66,7 @@ class PlotMap:
             raise IndexError('Layer can be at most {}'.format(len(self.layers)))
         return self.layers[layer]
 
-    def animate(self, selector_func, title_func, color_colname=None, layer=0):
+    def animate(self, selector_func, title_func, frames, color_colname=None, layer=0):
         def anim_func(i):
             indices = selector_func(self.data, i)
             r = self.plot(indices, color_colname=color_colname, layer=layer, draw=False)
@@ -74,7 +74,7 @@ class PlotMap:
             return r
 
         anim = animation.FuncAnimation(plt.gcf(), anim_func,
-                                       init_func=lambda: self.plot([], layer=layer))
+                                       init_func=lambda: self.plot([], layer=layer), frames=frames)
         return anim
 
     def draw_colorbar(self):
@@ -89,11 +89,11 @@ class PlotMap:
 
 
 def selector(data, i):
-    return data[data['TimeIndex'] == i]
+    return data[data['TimeIndex'] == i].index
 
 
 def titler(data, indices, i):
-    return data.loc[indices[0], 'Time'].time()
+    return pd.Timestamp(data.loc[0, 'Time'].value + i * 30000000000).time().__str__()
 
 
 def val_to_col(column, minimum, maximum):  # 0 to 120 deg hue = red to green color
@@ -120,17 +120,15 @@ data['Velocity'] *= 3.6
 data = data[data['Velocity'] < 85]
 data.index = np.arange(0, len(data))
 data['Time'] = [t - datetime.timedelta(seconds=t.second%30, microseconds=t.microsecond) for t in data['Time']]
-data['TimeIndex'] = [(x.value - data.loc[0, 'Time'].value)/30000000000 for x in data['Time']]
+data['TimeIndex'] = [int((x.value - data.loc[0, 'Time'].value)/30000000000) for x in data['Time']]
+
 
 def plot_colored(data, col):
     pm = PlotMap(data, col)
-    fig = plt.gcf()
-    anim = pm.animate(selector, titler)
+    anim = pm.animate(selector, titler, max(data['TimeIndex']))
     pm.show()
-    mywriter = animation.FFMpegWriter(fps=1)
-    anim.save('myanimation.mp4', writer=mywriter)
 
 
 plot_colored(data, 'Velocity')
 #plot_colored(data, 'LowFloor')
-
+#plot_colored(data, 'FirstLine')
